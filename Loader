@@ -1,0 +1,637 @@
+-- =================================
+-- RAYFIELD LOADER
+-- =================================
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "Tclipz | Universal Loader",
+   Icon = 0, -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
+   LoadingTitle = "Loading..",
+   LoadingSubtitle = "by sigmaandrew5",
+   ShowText = "Tclipz", -- for mobile users to unhide rayfield, change if you'd like
+   Theme = "AmberGlow", -- Check https://docs.sirius.menu/rayfield/configuration/themes
+
+   ToggleUIKeybind = "K", -- The keybind to toggle the UI visibility (string like "K" or Enum.KeyCode)
+
+   DisableRayfieldPrompts = false,
+   DisableBuildWarnings = false, -- Prevents Rayfield from warning when the script has a version mismatch with the interface
+
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = nil, -- Create a custom folder for your hub/game
+      FileName = "Big Hub"
+   },
+
+   Discord = {
+      Enabled = false, -- Prompt the user to join your Discord server if their executor supports it
+      Invite = "noinvitelink", -- The Discord invite code, do not include discord.gg/. E.g. discord.gg/ ABCD would be ABCD
+      RememberJoins = true -- Set this to false to make them join the discord every time they load it up
+   },
+
+   KeySystem = true, -- Set this to true to use our key system
+   KeySettings = {
+      Title = "Tclipz Free | Universal V1",
+      Subtitle = "Key System",
+      Note = "No method of obtaining the key is provided", -- Use this to tell the user how to get a key
+      FileName = "Key", -- It is recommended to use something unique as other scripts using Rayfield may overwrite your key file
+      SaveKey = true, -- The user's key will be saved, but if you change the key, they will be unable to use your script
+      GrabKeyFromSite = false, -- If this is true, set Key below to the RAW site you would like Rayfield to get the key from
+      Key = {"TclipzFreeUniversalLoader"} -- List of keys that will be accepted by the system, can be RAW file links (pastebin, github etc) or simple strings ("hello","key22")
+   }
+})
+
+-- =================================
+-- SERVICES
+-- =================================
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
+local Camera = workspace.CurrentCamera
+
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+
+-- =================================
+-- TABS
+-- =================================
+local MiscTab = Window:CreateTab("Misc", 4483362458)
+local VisualsTab = Window:CreateTab("Visuals", 4483362458)
+local AfkTab = Window:CreateTab("AFK", 4483362458)
+local PlayersTab = Window:CreateTab("Players", 4483362458)
+local TrollTab = Window:CreateTab("Troll", 4483362458)
+local ScriptHubTab = Window:CreateTab("Script Hub", 4483362458)
+local ExecutorTab = Window:CreateTab("Executor", 4483362458)
+local AimlockTab = Window:CreateTab("Aimlock", 4483362458)
+
+-- =================================
+-- CHARACTER
+-- =================================
+local Humanoid
+local function SetChar(char)
+   Humanoid = char:WaitForChild("Humanoid")
+end
+if LocalPlayer.Character then SetChar(LocalPlayer.Character) end
+LocalPlayer.CharacterAdded:Connect(SetChar)
+
+-- =================================
+-- MISC
+-- =================================
+local GodMode = false
+local ClickTP = false
+local NightVision = false
+
+MiscTab:CreateSlider({
+   Name = "WalkSpeed",
+   Range = {16, 300},
+   Increment = 1,
+   CurrentValue = 16,
+   Callback = function(v) if Humanoid then Humanoid.WalkSpeed = v end end
+})
+
+MiscTab:CreateSlider({
+   Name = "JumpPower",
+   Range = {50, 300},
+   Increment = 1,
+   CurrentValue = 50,
+   Callback = function(v) if Humanoid then Humanoid.JumpPower = v end end
+})
+
+MiscTab:CreateToggle({
+   Name = "God Mode",
+   CurrentValue = false,
+   Callback = function(v) GodMode = v end
+})
+
+MiscTab:CreateToggle({
+   Name = "Click Teleport",
+   CurrentValue = false,
+   Callback = function(v) ClickTP = v end
+})
+
+MiscTab:CreateToggle({
+   Name = "Night Vision",
+   CurrentValue = false,
+   Callback = function(v)
+      NightVision = v
+      if v then
+         Lighting.Ambient = Color3.fromRGB(0,255,0)
+         Lighting.OutdoorAmbient = Color3.fromRGB(0,255,0)
+      else
+         Lighting.Ambient = Color3.new(1,1,1)
+         Lighting.OutdoorAmbient = Color3.new(1,1,1)
+      end
+   end
+})
+
+MiscTab:CreateButton({
+   Name = "Reset Character",
+   Callback = function()
+      LocalPlayer:LoadCharacter()
+   end
+})
+
+RunService.Heartbeat:Connect(function()
+   if GodMode and Humanoid then
+      Humanoid.Health = Humanoid.MaxHealth
+   end
+end)
+
+Mouse.Button1Down:Connect(function()
+   if ClickTP and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+      LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(Mouse.Hit.Position + Vector3.new(0,3,0))
+   end
+end)
+
+-- =================================
+-- VISUALS / ESP
+-- =================================
+local ESPEnabled = false
+local BoxEnabled = true
+local NameEnabled = true
+local TracerEnabled = true
+local HighlightTeammates = false
+local RainbowLighting = false
+local RainbowColor = 0
+
+VisualsTab:CreateToggle({Name="Enable ESP", CurrentValue=false, Callback=function(v) ESPEnabled=v end})
+VisualsTab:CreateToggle({Name="Boxes", CurrentValue=true, Callback=function(v) BoxEnabled=v end})
+VisualsTab:CreateToggle({Name="Names", CurrentValue=true, Callback=function(v) NameEnabled=v end})
+VisualsTab:CreateToggle({Name="Tracers", CurrentValue=true, Callback=function(v) TracerEnabled=v end})
+VisualsTab:CreateToggle({Name="Highlight Teammates", CurrentValue=false, Callback=function(v) HighlightTeammates=v end})
+VisualsTab:CreateToggle({Name="Rainbow Lighting", CurrentValue=false, Callback=function(v) RainbowLighting=v end})
+
+-- ESP storage
+local ESPObjects = {}
+local function AddESP(p)
+   if p==LocalPlayer then return end
+   local box = Drawing.new("Square")
+   box.Filled = false; box.Thickness = 2; box.Color = Color3.fromRGB(0,170,255); box.Visible=false
+   local name = Drawing.new("Text")
+   name.Text = p.Name; name.Size=13; name.Center=true; name.Outline=true; name.Color=Color3.fromRGB(255,255,255); name.Visible=false
+   local tracer = Drawing.new("Line")
+   tracer.Thickness = 1; tracer.Color = Color3.fromRGB(0,170,255); tracer.Visible=false
+   ESPObjects[p] = {Box=box,Name=name,Tracer=tracer}
+end
+local function RemoveESP(p)
+   if ESPObjects[p] then for _,v in pairs(ESPObjects[p]) do v:Remove() end; ESPObjects[p]=nil end
+end
+for _,p in ipairs(Players:GetPlayers()) do AddESP(p) end
+Players.PlayerAdded:Connect(AddESP)
+Players.PlayerRemoving:Connect(RemoveESP)
+
+RunService.RenderStepped:Connect(function()
+   if RainbowLighting then
+      RainbowColor = (tick()*50)%255
+      Lighting.Ambient = Color3.fromHSV(RainbowColor/255,1,1)
+      Lighting.OutdoorAmbient = Color3.fromHSV(RainbowColor/255,1,1)
+   end
+   for p,obj in pairs(ESPObjects) do
+      local char = p.Character
+      if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
+         local hrp = char.HumanoidRootPart
+         local hum = char.Humanoid
+         local pos,vis = Camera:WorldToViewportPoint(hrp.Position)
+         if ESPEnabled and vis and hum.Health>0 then
+            local s = math.clamp(1/(pos.Z/25),0.8,2)
+            local w,h = 36*s,54*s
+            obj.Box.Visible=BoxEnabled
+            obj.Box.Size=Vector2.new(w,h)
+            obj.Box.Position=Vector2.new(pos.X-w/2,pos.Y-h/2)
+            obj.Name.Visible=NameEnabled
+            obj.Name.Position=Vector2.new(pos.X,pos.Y-h/2-14)
+            obj.Tracer.Visible=TracerEnabled
+            obj.Tracer.From=Vector2.new(Camera.ViewportSize.X/2,Camera.ViewportSize.Y)
+            obj.Tracer.To=Vector2.new(pos.X,pos.Y)
+         else
+            obj.Box.Visible=false; obj.Name.Visible=false; obj.Tracer.Visible=false
+         end
+      end
+   end
+end)
+
+-- ===========================
+-- AFK TAB (WORKING)
+-- ===========================
+
+local VirtualUser = game:GetService("VirtualUser")
+
+local antiAfkConn
+local autoClicker = false
+local spinner = false
+local autoJump = false
+local afkWalk = false
+
+-- Anti AFK
+AfkTab:CreateToggle({
+    Name = "Anti AFK",
+    CurrentValue = false,
+    Callback = function(v)
+        if v then
+            antiAfkConn = LocalPlayer.Idled:Connect(function()
+                VirtualUser:Button2Down(Vector2.new(0,0), Camera.CFrame)
+                task.wait(1)
+                VirtualUser:Button2Up(Vector2.new(0,0), Camera.CFrame)
+            end)
+        else
+            if antiAfkConn then
+                antiAfkConn:Disconnect()
+                antiAfkConn = nil
+            end
+        end
+    end
+})
+
+-- Auto Clicker (Left Click)
+AfkTab:CreateToggle({
+    Name = "Auto Clicker",
+    CurrentValue = false,
+    Callback = function(v)
+        autoClicker = v
+    end
+})
+
+-- Spinner (safe spin)
+AfkTab:CreateToggle({
+    Name = "Spinner",
+    CurrentValue = false,
+    Callback = function(v)
+        spinner = v
+    end
+})
+
+-- Auto Jump
+AfkTab:CreateToggle({
+    Name = "Auto Jump",
+    CurrentValue = false,
+    Callback = function(v)
+        autoJump = v
+    end
+})
+
+-- AFK Walk
+AfkTab:CreateToggle({
+    Name = "AFK Walk",
+    CurrentValue = false,
+    Callback = function(v)
+        afkWalk = v
+    end
+})
+
+-- ===========================
+-- AFK LOGIC LOOPS
+-- ===========================
+
+-- Auto Clicker Loop
+task.spawn(function()
+    while task.wait(0.15) do
+        if autoClicker then
+            VirtualUser:Button1Down(Vector2.new(0,0), Camera.CFrame)
+            task.wait()
+            VirtualUser:Button1Up(Vector2.new(0,0), Camera.CFrame)
+        end
+    end
+end)
+
+-- Spinner Loop
+task.spawn(function()
+    while task.wait() do
+        if spinner and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            LocalPlayer.Character.HumanoidRootPart.CFrame =
+                LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(3), 0)
+        end
+    end
+end)
+
+-- Auto Jump Loop
+task.spawn(function()
+    while task.wait(1.5) do
+        if autoJump and hum then
+            hum.Jump = true
+        end
+    end
+end)
+
+-- AFK Walk Loop
+task.spawn(function()
+    local direction = 1
+    while task.wait(2) do
+        if afkWalk and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local hrp = LocalPlayer.Character.HumanoidRootPart
+            hrp.CFrame = hrp.CFrame + hrp.CFrame.LookVector * (direction * 2)
+            direction = -direction
+        end
+    end
+end)
+
+-- ===========================
+-- PLAYERS TAB (TELEPORT ONLY)
+-- ===========================
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local playerButtons = {}
+
+local function ClearPlayersTab()
+    for _,btn in pairs(playerButtons) do
+        if btn.Destroy then
+            btn:Destroy()
+        end
+    end
+    table.clear(playerButtons)
+end
+
+local function RefreshPlayers()
+    ClearPlayersTab()
+
+    for _,plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            local btn = PlayersTab:CreateButton({
+                Name = "Teleport to "..plr.Name,
+                Callback = function()
+                    if LocalPlayer.Character
+                    and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    and plr.Character
+                    and plr.Character:FindFirstChild("HumanoidRootPart") then
+                        LocalPlayer.Character.HumanoidRootPart.CFrame =
+                            plr.Character.HumanoidRootPart.CFrame + Vector3.new(0,3,0)
+                    end
+                end
+            })
+            table.insert(playerButtons, btn)
+        end
+    end
+end
+
+-- Initial load
+RefreshPlayers()
+
+-- Update on join/leave
+Players.PlayerAdded:Connect(RefreshPlayers)
+Players.PlayerRemoving:Connect(RefreshPlayers)
+
+
+-- =================================
+-- TROLL
+-- =================================
+local Fling = false
+local RandomSpin = false
+local ColorShift = false
+
+TrollTab:CreateToggle({Name="Spin Fling",CurrentValue=false,Callback=function(v) Fling=v end})
+TrollTab:CreateToggle({Name="Random Spin",CurrentValue=false,Callback=function(v) RandomSpin=v end})
+TrollTab:CreateToggle({Name="Color Shift",CurrentValue=false,Callback=function(v) ColorShift=v end})
+
+RunService.RenderStepped:Connect(function()
+   if Fling and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+      LocalPlayer.Character.HumanoidRootPart.CFrame *= CFrame.Angles(0, math.rad(30),0)
+   end
+   if RandomSpin and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+      LocalPlayer.Character.HumanoidRootPart.CFrame *= CFrame.Angles(math.rad(math.random(-5,5)),math.rad(math.random(-5,5)),math.rad(math.random(-5,5)))
+   end
+   if ColorShift then
+      for _,p in ipairs(Players:GetPlayers()) do
+         if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            p.Character.HumanoidRootPart.Color = Color3.fromHSV((tick()%5)/5,1,1)
+         end
+      end
+   end
+end)
+
+-- =================================
+-- SCRIPT HUB
+-- =================================
+ScriptHubTab:CreateButton({Name="Infinite Yield", Callback=function()
+   loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+end})
+ScriptHubTab:CreateButton({Name="Dex Explorer", Callback=function()
+   loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/main/dex.lua"))()
+end})
+ScriptHubTab:CreateInput({Name="Load Script URL", PlaceholderText="Paste URL here", RemoveTextAfterFocusLost=false, Callback=function(url)
+   if url and url~="" then
+      loadstring(game:HttpGet(url))()
+   end
+end})
+ScriptHubTab:CreateButton({Name="Other Scripts Placeholder", Callback=function() end})
+
+-- =================================
+-- EXECUTOR
+-- =================================
+_G._EXEC_TEXT = ""
+ExecutorTab:CreateInput({Name="Lua Executor", PlaceholderText="paste script here", RemoveTextAfterFocusLost=false, Callback=function(t) _G._EXEC_TEXT=t end})
+ExecutorTab:CreateButton({Name="Execute", Callback=function() if _G._EXEC_TEXT and _G._EXEC_TEXT~="" then loadstring(_G._EXEC_TEXT)() end end})
+ExecutorTab:CreateButton({Name="Clear Box", Callback=function() _G._EXEC_TEXT="" end})
+ExecutorTab:CreateButton({Name="Save Script", Callback=function() writefile("SavedScript.txt",_G._EXEC_TEXT or "") end})
+
+-- ===========================
+-- AIMLOCK TAB (SMOOTH CAMERA)
+-- ===========================
+
+local aimlockEnabled = false
+local fovEnabled = false
+local fovSize = 120
+local fovThickness = 2
+local smoothness = 5 -- lower = snappier, higher = smoother
+
+local holdingRMB = false
+
+-- FOV circle (hidden by default)
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Visible = false
+FOVCircle.Color = Color3.fromRGB(0,170,255)
+FOVCircle.Filled = false
+FOVCircle.Transparency = 1
+FOVCircle.NumSides = 64
+
+-- ===========================
+-- UI CONTROLS
+-- ===========================
+
+AimlockTab:CreateToggle({
+    Name = "Aimlock",
+    CurrentValue = false,
+    Callback = function(v)
+        aimlockEnabled = v
+    end
+})
+
+AimlockTab:CreateToggle({
+    Name = "FOV",
+    CurrentValue = false,
+    Callback = function(v)
+        fovEnabled = v
+        FOVCircle.Visible = v
+    end
+})
+
+AimlockTab:CreateSlider({
+    Name = "FOV Size",
+    Range = {50, 500},
+    Increment = 1,
+    CurrentValue = 120,
+    Callback = function(v)
+        fovSize = v
+    end
+})
+
+AimlockTab:CreateSlider({
+    Name = "FOV Thickness",
+    Range = {1, 10},
+    Increment = 1,
+    CurrentValue = 2,
+    Callback = function(v)
+        fovThickness = v
+        FOVCircle.Thickness = v
+    end
+})
+
+-- ✅ NEW SMOOTHNESS SLIDER
+AimlockTab:CreateSlider({
+    Name = "Smoothness",
+    Range = {1, 20},
+    Increment = 1,
+    CurrentValue = 5,
+    Callback = function(v)
+        smoothness = v
+    end
+})
+
+-- ===========================
+-- INPUT (RMB HOLD)
+-- ===========================
+
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+        holdingRMB = true
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+        holdingRMB = false
+    end
+end)
+
+-- ===========================
+-- AIMLOCK LOGIC
+-- ===========================
+
+RunService.RenderStepped:Connect(function()
+    -- Update FOV circle
+    local mousePos = UserInputService:GetMouseLocation()
+    FOVCircle.Position = mousePos
+    FOVCircle.Radius = fovSize
+
+    if not (aimlockEnabled and holdingRMB) then return end
+
+    local closestTarget
+    local closestDist = math.huge
+
+    for _,plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer
+        and plr.Character
+        and plr.Character:FindFirstChild("HumanoidRootPart")
+        and plr.Character:FindFirstChild("Humanoid")
+        and plr.Character.Humanoid.Health > 0 then
+
+            local hrp = plr.Character.HumanoidRootPart
+            local screenPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+
+            if onScreen then
+                local dist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
+                if dist < closestDist and (not fovEnabled or dist <= fovSize) then
+                    closestDist = dist
+                    closestTarget = hrp
+                end
+            end
+        end
+    end
+
+    if closestTarget then
+        local camCF = Camera.CFrame
+        local targetCF = CFrame.new(camCF.Position, closestTarget.Position)
+
+        -- 🔥 Smooth camera interpolation
+        Camera.CFrame = camCF:Lerp(targetCF, 1 / smoothness)
+    end
+end)
+
+
+-- =================================
+-- CUSTOMIZE TAB
+-- =================================
+local CustomizeTab = Window:CreateTab("Customize", 4483362458)
+
+-- Theme Dropdown (Safe for your Rayfield)
+CustomizeTab:CreateDropdown({
+    Name = "UI Theme",
+    Options = {"Default","Amber Glow","Amethyst","Bloom","Dark Blue","Green","Light","Ocean","Serenity"},
+    CurrentOption = "Default",
+    Callback = function(theme)
+        local success, err = pcall(function()
+            -- Use the exact theme mapping from your list
+            local themeMap = {
+                ["Default"] = "Default",
+                ["Amber Glow"] = "AmberGlow",
+                ["Amethyst"] = "Amethyst",
+                ["Bloom"] = "Bloom",
+                ["Dark Blue"] = "DarkBlue",
+                ["Green"] = "Green",
+                ["Light"] = "Light",
+                ["Ocean"] = "Ocean",
+                ["Serenity"] = "Serenity"
+            }
+            Rayfield:ChangeTheme(themeMap[theme])
+        end)
+        if not success then
+            warn("Failed to change theme: "..tostring(err))
+        end
+    end
+})
+
+
+-- Rejoin Server Button
+CustomizeTab:CreateButton({
+    Name = "Rejoin Server",
+    Callback = function()
+        local ts = game:GetService("TeleportService")
+        local placeId = game.PlaceId
+        ts:Teleport(placeId, LocalPlayer)
+    end
+})
+
+-- Server Hop Button
+CustomizeTab:CreateButton({
+    Name = "Server Hop",
+    Callback = function()
+        local HttpService = game:GetService("HttpService")
+        local TeleportService = game:GetService("TeleportService")
+        local PlaceID = game.PlaceId
+        local servers = {}
+        local page = 1
+        repeat
+            local success, response = pcall(function()
+                return game:HttpGetAsync("https://games.roblox.com/v1/games/"..PlaceID.."/servers/Public?sortOrder=Asc&limit=100&cursor="..(page>1 and page or ""))
+            end)
+            if success then
+                local data = HttpService:JSONDecode(response)
+                for _,s in pairs(data.data) do
+                    if s.playing < s.maxPlayers and s.id ~= game.JobId then
+                        table.insert(servers, s.id)
+                    end
+                end
+                page = page + 1
+            else
+                break
+            end
+        until #servers == 0
+        if #servers > 0 then
+            local randServer = servers[math.random(1,#servers)]
+            TeleportService:TeleportToPlaceInstance(PlaceID, randServer, LocalPlayer)
+        else
+            warn("No available servers found.")
+        end
+    end
+})
